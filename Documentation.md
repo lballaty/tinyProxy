@@ -1,4 +1,4 @@
-# Pthon Proxy Server Documentation
+# Python Proxy Server Documentation
 
 ## Overview
 
