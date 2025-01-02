@@ -1,226 +1,155 @@
-# Python Proxy Server Documentation
-
-## Overview
-
-This project implements a Python-based proxy server designed to forward API requests from a web application to a HomeAssistant server, resolving CORS issues. The proxy is built using Flask, with configurable settings for the target server, port, and authentication token via a `config.json` file. Logging and error handling are implemented for better observability and robustness.
+**Functional Use of the Flask-Based Proxy Server**
 
 ---
 
-## Features
+**Introduction:**
 
-- **CORS Resolution**: Enables seamless communication between web applications and the HomeAssistant API.
-- **Configurable Settings**: Configure the target server, port, and authentication token via `config.json`.
-- **Logging**: Provides detailed logs for requests and errors.
-- **Error Handling**: Gracefully handles exceptions and returns meaningful error messages.
+This document provides an overview of the functional use of the Flask-based proxy server. The proxy server is designed to forward HTTP requests from a client to a specified target server and relay the responses back to the client. It supports multiple HTTP methods, including GET, POST, PUT, DELETE, and PATCH. This proxy server is suitable for testing and development purposes and is not intended for production environments.
 
 ---
 
-## Prerequisites
+**Core Functionality:**
 
-- Python 3.9 or later
-- Required Python libraries (listed in `requirements.txt`):
-  - Flask
-  - Requests
-  - Certifi
+1. **Request Forwarding:**
+   - The proxy server listens for HTTP requests on a designated port.
+   - Incoming requests are forwarded to the configured target server.
+   - Supported HTTP methods include:
+     - GET: For retrieving resources.
+     - POST: For creating or updating resources with a payload.
+     - PUT: For replacing resources.
+     - DELETE: For removing resources.
+     - PATCH: For partial updates to resources.
 
----
+2. **Response Handling:**
+   - The proxy server captures the target server’s response.
+   - It relays the response status code, headers, and body back to the client.
+   - Hop-by-hop headers, such as `content-length` and `connection`, are excluded to ensure proper forwarding.
 
-## File Structure
+3. **Authorization Support:**
+   - The proxy server adds predefined authorization headers to outgoing requests.
+   - These headers can include bearer tokens or other credentials defined in the configuration file.
 
-```plaintext
-python-proxy-app/
-├── proxy_server/
-│   ├── __init__.py
-│   ├── main.py       # Main application logic
-│   ├── utils.py      # Utility functions (future use)
-├── tests/
-│   ├── __init__.py
-│   ├── test_proxy.py # Unit tests
-├── .devcontainer/
-│   ├── devcontainer.json # Dev container configuration
-├── config.json       # Proxy configuration file
-├── requirements.txt  # Project dependencies
-├── setup.py          # Py2App packaging configuration
-├── README.md         # Project documentation
-```
+4. **Dynamic Routing:**
+   - Requests to the proxy server’s `/api/<path:subpath>` endpoint are dynamically routed to corresponding endpoints on the target server.
+   - Example:
+     - Incoming: `http://localhost:8888/api/resource`
+     - Forwarded: `http://192.168.2.2:8123/api/resource`
 
----
-
-## Installation
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/your-repo/python-proxy-app.git
-cd python-proxy-app
-```
-
-### 2. Create and Activate a Virtual Environment
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
+5. **Error Handling:**
+   - The proxy server logs any errors encountered during request forwarding.
+   - It returns a 500 Internal Server Error to the client if the request to the target server fails.
 
 ---
 
-## Configuration
+**Configuration Requirements:**
 
-Create a `config.json` file in the root directory with the following structure:
+1. **Configuration File (`config.json`):**
+   - A JSON file located in the `instance/` directory.
+   - Example:
+     ```json
+     {
+       "target_server": "http://192.168.2.2:8123",
+       "port": 8888,
+       "auth_token": "YOUR_LONG_LIVED_ACCESS_TOKEN"
+     }
+     ```
+   - **Fields:**
+     - `target_server`: The base URL of the server to which requests are forwarded.
+     - `port`: The port on which the proxy server listens for incoming requests.
+     - `auth_token`: A token used for authentication with the target server.
 
-```json
-{
-    "target_server": "http://192.168.2.2:8123",
-    "port": 8888,
-    "auth_token": "YOUR_LONG_LIVED_ACCESS_TOKEN"
-}
-```
-
-- **target\_server**: URL of the HomeAssistant server.
-- **port**: Port number for the proxy server.
-- **auth\_token**: Long-lived access token for authenticating with the HomeAssistant API.
-
----
-
-## Usage
-
-### Start the Proxy Server
-
-Run the following command to start the server:
-
-```bash
-python proxy_server/main.py
-```
-
-The server listens on the port specified in `config.json` (default: `8888`).
-
-### Send Requests Through the Proxy
-
-Using `curl`, you can test the proxy server:
-
-```bash
-curl -X GET "http://localhost:8888/api/states" -H "Content-Type: application/json"
-```
-
-- This command forwards the request to the HomeAssistant server and returns the response.
-
-### Logs and Debugging
-
-Logs are printed to the terminal and include:
-
-- Request details
-- Response status codes
-- Error messages in case of failure
+2. **Environment Setup:**
+   - Python 3.x must be installed.
+   - A virtual environment should be created and activated for dependency management.
+   - Dependencies are listed in `requirements.txt` and include:
+     - Flask
+     - requests
 
 ---
 
-## Testing
+**Example Usage:**
 
-### Run Unit Tests
+1. **Start the Proxy Server:**
+   ```bash
+   python run.py
+   ```
 
-Unit tests are located in the `tests/` directory. To run the tests:
+2. **Send a GET Request:**
+   - Client Command:
+     ```bash
+     curl http://localhost:8888/api/resource
+     ```
+   - Forwarded Request:
+     - URL: `http://192.168.2.2:8123/api/resource`
+     - Method: GET
+     - Headers:
+       ```
+       Authorization: Bearer YOUR_LONG_LIVED_ACCESS_TOKEN
+       Content-Type: application/json
+       ```
+   - Response:
+     - Status Code: 200 (or appropriate code from the target server)
+     - Body: JSON or other data as returned by the target server.
 
-```bash
-python -m unittest discover tests
-```
-
----
-
-## Deployment
-
-To deploy the proxy server as a standalone macOS application, follow these steps:
-
-### 1. Install `py2app`
-
-```bash
-pip install py2app
-```
-
-### 2. Configure `setup.py`
-
-Ensure `setup.py` is correctly configured:
-
-```python
-from setuptools import setup
-
-APP = ['proxy_server/main.py']
-OPTIONS = {
-    'argv_emulation': True,
-    'plist': {
-        'CFBundleName': 'Python Proxy Server',
-        'CFBundleVersion': '0.1.0'
-    }
-}
-
-setup(
-    app=APP,
-    options={'py2app': OPTIONS},
-    setup_requires=['py2app'],
-)
-```
-
-### 3. Build the Application
-
-```bash
-python setup.py py2app
-```
-
-The packaged application will be available in the `dist/` directory.
+3. **Send a POST Request:**
+   - Client Command:
+     ```bash
+     curl -X POST http://localhost:8888/api/resource \
+          -H "Content-Type: application/json" \
+          -d '{"key": "value"}'
+     ```
+   - Forwarded Request:
+     - URL: `http://192.168.2.2:8123/api/resource`
+     - Method: POST
+     - Headers:
+       ```
+       Authorization: Bearer YOUR_LONG_LIVED_ACCESS_TOKEN
+       Content-Type: application/json
+       ```
+     - Body:
+       ```json
+       {
+         "key": "value"
+       }
+       ```
+   - Response:
+     - Status Code: 201 (or appropriate code from the target server)
+     - Body: JSON or other data as returned by the target server.
 
 ---
 
-## Troubleshooting
+**Limitations:**
 
-### Common Issues
+1. **Security:**
+   - The proxy server does not validate incoming request payloads or headers.
+   - It does not enforce HTTPS, making it unsuitable for production environments.
 
-1. **Configuration File Not Found**
+2. **Error Handling:**
+   - Error messages returned to the client are generic and do not include detailed diagnostics.
 
-   - Ensure `config.json` exists in the project root and is properly formatted.
-
-2. **Server Not Responding**
-
-   - Verify the HomeAssistant server URL and that it is reachable from the proxy server.
-
-3. **Authentication Errors**
-
-   - Check the validity of the long-lived access token in `config.json`.
-
-### Debugging
-
-- Check the logs printed to the terminal for detailed error messages.
-- Enable debug mode in Flask for more information:
-  ```python
-  app.run(host='0.0.0.0', port=PROXY_PORT, debug=True)
-  ```
+3. **Performance:**
+   - The proxy server is single-threaded when run using Flask’s development server.
+   - It may not scale well under high traffic.
 
 ---
 
-## Future Enhancements
+**Use Cases:**
 
-- Add support for additional HTTP methods (e.g., PUT, DELETE).
-- Implement rate limiting for security.
-- Add unit tests for edge cases.
-- Create a Dockerfile for containerized deployment.
+1. **Development and Testing:**
+   - Simulate interactions between clients and a target server without direct access to the latter.
+   - Test API calls in a controlled local environment.
 
----
+2. **Debugging:**
+   - Monitor and log API requests and responses.
+   - Debug authentication flows by inspecting headers and payloads.
 
-## License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
-
----
-
-## Acknowledgments
-
-- Flask: A micro web framework for Python
-- Requests: A simple HTTP library for Python
-- HomeAssistant: Open-source home automation platform
+3. **Educational Purposes:**
+   - Learn how proxy servers function.
+   - Experiment with Flask’s routing and request handling capabilities.
 
 ---
+
+**Conclusion:**
+
+The Flask-based proxy server is a lightweight and flexible tool for forwarding API requests. While it is ideal for testing and development, it should not be deployed in production environments without significant enhancements to security, performance, and scalability. Its dynamic routing and ease of configuration make it a valuable asset for developers working with APIs.
 
