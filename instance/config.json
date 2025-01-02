@@ -1,6 +1,6 @@
 {
-  "target_server": "http://192.168.2.2:8123",
+  "target_server": "http://192.168.2.39:8123",
   "port": 8888,
-  "auth_token": "YOUR_LONG_LIVED_ACCESS_TOKEN"
+  "auth_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI2ZTFjMTIwMGM0MmU0ZGZhYWY0NjMwMzQ1MWIwOGJmNCIsImlhdCI6MTczNDAzODUzOCwiZXhwIjoyMDQ5Mzk4NTM4fQ.YKUcax64CZnNGaAJSccrKh2YAPQWF8u91_lJgnUEQTQ"
 }
 
